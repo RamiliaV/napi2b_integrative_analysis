@@ -111,8 +111,7 @@ The repository already reflects a fairly mature analysis logic in which preproce
 - Stabilize the export manifest and folder conventions for reproducible reuse.
 - Refactor reusable notebook logic into package-style helper modules.
 - Extend condition comparison toward mutation-aware analysis, including disease-relevant variants.
-- Connect the workflow to a more formalized pipeline and visualization interface: 
-
+- Connect the workflow to a more formalized pipeline and visualization interface: https://github.com/2Myaka2/MANIA_WANIA/
 
 ## Russian summary
 
