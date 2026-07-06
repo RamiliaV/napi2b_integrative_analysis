@@ -66,61 +66,32 @@ This repository is designed to serve several purposes at once:
 ## Suggested repository layout
 
 ```text
-.
-├── README.md
-├── notebooks/
-│   ├── Phase3A_preprocessing_scientific_v5.6.ipynb
-│   └── Phase3B_Topological_Graph_Analysis_v6.ipynb
-├── docs/
-│   ├── project-overview.md
-│   ├── repository-map.md
-│   ├── data-contract.md
-│   └── figures/
-│       ├── pipeline_overview.png
-│       ├── phase3a_exports_scheme.png
-│       ├── qc_normal_tumor.png
-│       ├── epitope_graph_figure.png
-│       ├── community_alluvial.png
-│       └── temporal_rin.png
-└── assets/
+./
+├─ README.md
+├─ .gitignore
+├─ notebooks/
+│  ├─ Phase3A_preprocessing.ipynb
+│  └─ Phase3B_topological_analysis.ipynb
+├─ docs/
+│  ├─ project-overview.md
+│  ├─ data-contract.md
+│  ├─ repository-map.md
+│  └─ figures/
+│     ├─ figure_1.png
+│     ├─ figure_2.png
+│     ├─ figure_3.png
+│     └─ figure_4.png
+└─ data/
+   ├─ README.md
+   └─ example/
 ```
 
-## Recommended illustrations
+## Figures
 
-For an onboarding-oriented repository, the most useful figures are not raw notebook screenshots but curated explanatory panels. The following set is recommended:
-
-### 1. Pipeline overview
-A single schematic showing the full logic of the project:
-
-`MD trajectories -> Phase3A preprocessing -> standardized exports -> Phase3B graph analysis -> figures/statistics/biological interpretation`.
-
-This should be the first figure in the repository because it gives immediate orientation to new readers.
-
-### 2. Phase3A export schema
-A data-contract style illustration showing what Phase3A produces for downstream analysis, including residue tables, contact edges, non-protein nodes, heterographs, 3D coordinates, and per-frame parquet files.
-
-### 3. QC panel
-A compact quality-control figure summarizing the preprocessing outputs, for example using the existing QC panels generated for normal and tumor conditions. This demonstrates that graph analysis is built on validated structural and contact-level preprocessing rather than on ad hoc graph construction.
-
-### 4. Regional epitope or ECD graph figure
-A focused biological figure showing extracellular domain or epitope-level topology, rather than only a global full-protein network. This is the most effective scientific illustration for explaining why graph-based analysis is biologically informative.
-
-### 5. Community reshuffling figure
-An alluvial or related summary showing how graph communities reorganize between normal and tumor-like conditions. This is a strong figure for communicating topological change at the mesoscale level.
-
-### 6. Temporal RIN figure
-A panel showing sliding-window or frame-wise graph behavior, such as changes in modularity, edge count, strength, or community number over time. This figure is useful because it shows that the project is not limited to a static consensus graph perspective.
-
-## Figure captions
-
-Suggested short captions for repository use:
-
-- **Figure 1. Project workflow.** From molecular dynamics trajectories to standardized graph-ready artifacts and topological interpretation.
-- **Figure 2. Phase3A exports.** Standardized preprocessing outputs connecting molecular simulation data to graph-based downstream analysis.
-- **Figure 3. QC overview.** Structural and interaction-level quality control of preprocessing outputs for normal and tumor conditions.
-- **Figure 4. Regional extracellular topology.** Example of condition-specific graph analysis focused on extracellular or epitope-associated regions of NaPi2b.
-- **Figure 5. Community reshuffling.** Condition-dependent reassignment of graph communities between normal and tumor-like NaPi2b networks.
-- **Figure 6. Temporal RIN behavior.** Time-resolved graph metrics showing dynamic differences between condition-specific residue interaction networks.
+- **Figure 1. QC overview.** Structural and interaction-level quality control of preprocessing outputs for normal and tumor conditions.
+- **Figure 2. Regional extracellular topology.** Example of condition-specific graph analysis focused on extracellular or epitope-associated regions of NaPi2b.
+- **Figure 3. Community reshuffling.** Condition-dependent reassignment of graph communities between normal and tumor-like NaPi2b networks.
+- **Figure 4. Temporal RIN behavior.** Time-resolved graph metrics showing dynamic differences between condition-specific residue interaction networks.
 
 ## How to start
 
@@ -134,6 +105,14 @@ For a new reader, the recommended entry points are:
 ## Current status
 
 The repository already reflects a fairly mature analysis logic in which preprocessing exports and graph analytics are explicitly connected. The next step toward external usability would be to formalize this structure into a cleaner repository layout with stable paths, figure folders, and short supporting documentation pages.
+
+## Future work
+
+- Stabilize the export manifest and folder conventions for reproducible reuse.
+- Refactor reusable notebook logic into package-style helper modules.
+- Extend condition comparison toward mutation-aware analysis, including disease-relevant variants.
+- Connect the workflow to a more formalized pipeline and visualization interface: 
+
 
 ## Russian summary
 
