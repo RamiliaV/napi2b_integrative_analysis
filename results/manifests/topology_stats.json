@@ -1,0 +1,38 @@
+{
+  "normal": {
+    "n_nodes": 691,
+    "n_edges": 3263,
+    "density": 0.013687,
+    "n_components": 2,
+    "giant_component_frac": 0.9986,
+    "n_edges_per_type": {
+      "backbone": 689,
+      "hydrophobic": 85,
+      "vdw": 2445,
+      "salt_bridge": 14,
+      "ionic": 7,
+      "aromatic_pi": 21,
+      "cation_pi": 2
+    },
+    "modularity_louvain": 0.7914
+  },
+  "tumor": {
+    "n_nodes": 691,
+    "n_edges": 3331,
+    "density": 0.013973,
+    "n_components": 2,
+    "giant_component_frac": 0.9986,
+    "n_edges_per_type": {
+      "backbone": 689,
+      "vdw": 2508,
+      "hydrophobic": 85,
+      "salt_bridge": 16,
+      "ionic": 7,
+      "aromatic_pi": 24,
+      "cation_pi": 2
+    },
+    "modularity_louvain": 0.7923
+  },
+  "NMI": 0.7885,
+  "ARI": 0.6231
+}
