@@ -1,0 +1,107 @@
+aug_noise_sigma: 0.01
+backbone_cutoff_A: 4.5
+conditions:
+- normal
+- tumor
+ecd_resids:
+- 234
+- 361
+edge_type_index:
+  aromatic_pi: 5
+  backbone: 0
+  cation_pi: 6
+  disulfide: 2
+  glycan_anchor: 10
+  hbond: 1
+  hydrophobic: 4
+  ionic: 7
+  protein_glycan: 11
+  protein_lipid: 9
+  salt_bridge: 8
+  vdw: 3
+epitope_resids:
+- 311
+- 341
+export_dir: /content/phase3a_outputs_scientific_v2/phase3aexports
+feature_block_offsets:
+  glycan:
+    anchor_resid:
+      dim: 1
+      end: 4
+      start: 3
+    anchor_z:
+      dim: 1
+      end: 5
+      start: 4
+    fucosylation_count:
+      dim: 1
+      end: 3
+      start: 2
+    n_monosaccharides:
+      dim: 1
+      end: 1
+      start: 0
+    sialylation_count:
+      dim: 1
+      end: 2
+      start: 1
+  lipid:
+    n_atoms:
+      dim: 1
+      end: 1
+      start: 0
+    resname_code:
+      dim: 1
+      end: 2
+      start: 1
+    z_com:
+      dim: 1
+      end: 3
+      start: 2
+  protein:
+    dssp_onehot:
+      dim: 8
+      end: 1290
+      start: 1282
+    esm2:
+      dim: 1280
+      end: 1280
+      start: 0
+    phi_psi_sincos:
+      dim: 4
+      end: 1294
+      start: 1290
+    rmsf:
+      dim: 1
+      end: 1281
+      start: 1280
+    sasa:
+      dim: 1
+      end: 1282
+      start: 1281
+    tm_relative_z:
+      dim: 1
+      end: 1295
+      start: 1294
+frame_frac: 0.1
+glycan_feature_dim: 5
+glycan_template:
+- BGLCNA
+- BGLCNA
+- BMAN
+- BMAN
+- BMAN
+- BMAN
+- BGALNA
+- BGALNA
+- AFUC
+- ANE5AC
+- ANE5AC
+lipid_feature_dim: 3
+min_contact_freq: 0.3
+n_aug_train: 10
+n_edge_types: 12
+protein_feature_dim: 1295
+random_state: 42
+scenario: aggregated
+tau_corr_frames: null

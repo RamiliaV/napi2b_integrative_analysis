@@ -1,0 +1,56 @@
+{
+  "backbone": {
+    "criterion": "sequential i→i+1 Cα",
+    "distance_A": 4.5
+  },
+  "hbond": {
+    "criterion": "distance + angle",
+    "distance_A": 3.5,
+    "angle_deg_min": 120.0
+  },
+  "disulfide": {
+    "criterion": "SG-SG distance",
+    "distance_A": 2.2
+  },
+  "vdw": {
+    "criterion": "heavy-atom distance in window",
+    "distance_min_A": 3.0,
+    "distance_max_A": 4.5
+  },
+  "hydrophobic": {
+    "criterion": "CB-CB distance, hydrophobic residue pair",
+    "distance_A": 5.0
+  },
+  "aromatic_pi": {
+    "criterion": "ring centroid distance, aromatic pair",
+    "distance_A": 7.0
+  },
+  "cation_pi": {
+    "criterion": "cation to aromatic ring centroid",
+    "distance_A": 6.0
+  },
+  "ionic": {
+    "criterion": "charged side-chain heavy atom distance",
+    "distance_A": 6.0
+  },
+  "salt_bridge": {
+    "criterion": "donor/acceptor charged atom distance",
+    "distance_A": 4.0
+  },
+  "protein_lipid": {
+    "criterion": "min protein to lipid heavy atom",
+    "distance_A": 6.0
+  },
+  "glycan_anchor": {
+    "criterion": "covalent N-glycosylation anchor edge",
+    "distance_A": 0.0
+  },
+  "protein_glycan": {
+    "criterion": "min protein to glycan heavy atom",
+    "distance_A": 6.0
+  },
+  "protein_ligand": {
+    "criterion": "min protein to ligand heavy atom",
+    "distance_A": 6.0
+  }
+}
