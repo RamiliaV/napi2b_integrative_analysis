@@ -29,8 +29,6 @@ The current pilot analysis compares NaPi2b under normal (`NORM`) and tumor-like 
 **Classical MD descriptors show reduced global mobility, but no epitope-specific effect.**
 Global RMSD decreases from 0.72 ± 0.29 nm (`NORM`) to 0.56 ± 0.15 nm (`TUMOR`), while the radius of gyration remains essentially unchanged (3.64 nm vs 3.63 nm). Within the epitope region (residues 324–338), RMSF and Rg show no statistically significant difference between conditions (RMSF p = 0.23, Rg p = 0.97). In isolation, these descriptors would suggest that tumor-like conditions only reduce overall flexibility without touching the epitope itself.
 
-![results/figures/]
-
 **Residue interaction network topology reveals a localized effect that classical metrics miss.**
 After converting trajectories into per-frame RINs and computing degree, closeness, betweenness, and eigenvector centrality, a subdomain-level rewiring becomes visible within the epitope region, concentrated in residues 323–327 and 335, where all four centrality metrics drop by roughly 60–80% in `TUMOR` relative to `NORM`. Ser326 is the most affected position, with eigenvector centrality dropping by approximately 99–100%.
 
