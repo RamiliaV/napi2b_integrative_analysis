@@ -41,30 +41,23 @@ Suggested contents:
 - `community_alluvial.png` — community reshuffling between conditions.
 - `temporal_rin.png` — temporal graph metrics over trajectory windows.
 
-## Suggested reading paths
+## Pilot ST-GNN artifacts
 
-### For a scientist
+### Notebook
 
-1. `README.md`.
-2. `docs/project-overview.md`.
-3. `docs/figures/` panels.
-4. `Phase3B_Topological_Graph_Analysis_v6.ipynb` for the biological interpretation layer.
-5. `Phase3A_preprocessing_scientific_v5.6.ipynb` for low-level preprocessing details.
+- `notebooks/ST_GNN_Pilot2.ipynb`  
+  End-to-end pilot workflow: artifact loading, graph construction,
+  autoencoder training, latent-space analysis, ST-GNN evaluation,
+  baselines, and permutation control.
 
-### For a developer
+### Results
 
-1. `README.md`.
-2. `docs/data-contract.md`.
-3. `Phase3A_preprocessing_scientific_v5.6.ipynb` to inspect exported artifact logic.
-4. `Phase3B_Topological_Graph_Analysis_v6.ipynb` to inspect downstream assumptions and figure generation.
+- `results/figures/ae_training_curves.png`
+- `results/figures/umap_latent_space.png`
+- `results/figures/stgnn_real_vs_permutation.png`
 
-### For a supervisor or reviewer
+- `results/tables/stgnn_results_real_per_fold_seed.csv`
+- `results/tables/stgnn_summary_bootstrap_ci.csv`
+- `results/tables/final_comparison_table.csv`
 
-1. `README.md`.
-2. Pipeline overview figure.
-3. One QC figure.
-4. One core scientific result figure from Phase3B, preferably extracellular topology or community reshuffling.
-
-## Recommended future cleanup
-
-As the project matures, the repository would benefit from separating raw results, curated figures, reusable helper code, and manuscript-oriented assets into clearer folders. Even without full refactoring, a well-written `README.md` and the three short documents above already make the project substantially easier to understand for a new reader.
+- `results/manifests/stgnn_pilot_blocked_temporal_manifest.json`
