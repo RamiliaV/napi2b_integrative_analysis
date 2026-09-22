@@ -56,6 +56,24 @@ The simulations compare two *modelled* physicochemical contexts rather than clin
 
 The condition definitions jointly modify pH, ion composition, and membrane composition. Therefore, downstream differences are interpreted as effects associated with the **integrated modelled microenvironment**, not as causal effects of a single lipid, ion, or pH change.
 
+### Asymmetric membrane composition
+
+The systems use asymmetric bilayers. Values are molar percentages within
+each leaflet; `—` indicates that the lipid species was not included.
+
+| Condition | Leaflet | POPC | PSM | POPS | POPI | CHOL | POPE | GM1 | GM3 |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Normal-like | Outer | 47 | 8 | 5 | 5 | 30 | — | 5 | — |
+| Normal-like | Inner | 13 | — | 12 | 11 | 19 | 45 | — | — |
+| Tumor-like | Outer | 38 | 10 | 8 | 5 | 30 | — | — | 5 |
+| Tumor-like | Inner | 9 | — | 6 | 12 | 23 | 50 | — | — |
+
+Abbreviations: POPC, 1-palmitoyl-2-oleoyl-sn-glycero-3-phosphocholine;
+PSM, palmitoyl sphingomyelin; POPS, 1-palmitoyl-2-oleoyl-sn-glycero-3-
+phospho-L-serine; POPI, phosphatidylinositol; CHOL, cholesterol; POPE,
+1-palmitoyl-2-oleoyl-sn-glycero-3-phosphoethanolamine; GM1 and GM3,
+gangliosides.
+
 ## Dynamic RIN construction
 
 ### Graph representation
