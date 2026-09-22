@@ -35,3 +35,42 @@ Phase3A acts as a standardization layer between raw trajectory analysis and grap
 ## Recommended future stabilization
 
 To make the workflow easier to maintain, the exported files should eventually follow a fixed directory convention and a machine-readable manifest. A simple next step would be a manifest file that records condition name, frame count, residue count, file paths, and version tags for each export bundle.
+
+## ST-GNN pilot contract
+
+### Entity hierarchy
+
+condition
+: `normal` or `tumor`.
+
+run_id
+: MD trajectory identifier. In the current pilot, the primary grouping is
+  temporal blocks; future validation must use independent trajectory IDs.
+
+frame_id
+: one sampled MD frame.
+
+window_id
+: one temporal sequence of graph frames; windows must not cross a run boundary.
+
+### Required graph-level metadata
+
+- `condition`
+- `label`
+- `frame`
+- `block_id` for pilot blocked-temporal evaluation
+- `window_id`
+- `split`
+- `seed`
+- `fold`
+
+### Leakage constraint
+
+The pilot uses blocked temporal splits. For confirmatory analysis:
+
+```python
+assert set(train_run_ids).isdisjoint(test_run_ids)
+```
+
+Frames or temporal windows from the same MD replicate must never occur in
+both train and test subsets.
