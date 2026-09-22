@@ -1,279 +1,331 @@
-# NaPi2b Structural Bioinformatics Project
+# Integrative Structural-Dynamic Analysis of NaPi2b (SLC34A2)
 
-A structural bioinformatics project focused on the NaPi2b transporter (SLC34A2), combining molecular dynamics, residue interaction networks, and graph-based topological analysis to study microenvironment-dependent remodeling in normal and tumor-like conditions.
+Reproducible molecular-dynamics (MD), residue-interaction network (RIN), topological, and pilot spatiotemporal graph-neural-network (ST-GNN) analysis of the membrane phosphate transporter NaPi2b under normal- and tumor-like simulated microenvironments.
+
+> **Scope of this repository.** The repository documents a computational pilot and provides reproducible analysis artifacts. It does not present a clinically validated classifier or establish causal effects of any individual microenvironmental factor.
 
 ## Overview
 
-This repository contains the analytical workflow used to process NaPi2b molecular dynamics trajectories and convert them into biologically interpretable graph representations. The project is centered on the hypothesis that tumor-like conditions can induce hidden local rewiring in extracellular regions and epitope-associated subdomains even when classical global MD descriptors show only limited differences.
+NaPi2b (SLC34A2) is a sodium-dependent phosphate transporter expressed in epithelial tissues and investigated as a molecular target in ovarian cancer. Its conformational ensemble is influenced by the membrane, ionic environment, and protonation conditions. Static structures and conventional MD descriptors alone do not fully capture how residue contacts reorganize over time.
 
-The repository is organized around two main analytical stages, plus a stable results layer that both stages read from and write to:
+This project represents each MD frame as a residue-interaction network and analyses the resulting dynamic graph sequence along two complementary tracks:
 
-- **Phase3A: preprocessing and feature extraction** — standardized extraction of residue-level, contact-level, and non-protein interaction data from molecular dynamics trajectories.
-- **Phase3B: topological graph analysis** — construction and analysis of residue interaction networks, including centrality, community structure, regional epitope analysis, and temporal graph behavior.
-- **results/**: versioned tables, manifests, and figures produced by the two notebooks, kept separate from the analysis code itself.
+1. **Topology-first analysis** of dynamic RINs: centrality, communities, regional/epitope contact structure, and differential network properties.
+2. **Pilot ST-GNN analysis**: graph-based conformation encoding, latent-space analysis, blocked temporal evaluation, and label-permutation control.
 
-## Biological motivation
+```text
+Atomistic MD trajectories
+          |
+          v
+MANIA preprocessing and dynamic RIN construction
+          |
+          +-----------------------------+
+          |                             |
+          v                             v
+Topological analysis              Pilot ST-GNN analysis
+centralities, communities,        graph encoder, temporal model,
+regions, contacts                 latent-space and control analyses
+          |                             |
+          +-------------+---------------+
+                        v
+         Reproducible results, QC, manifests, and figures
+```
 
-NaPi2b (SLC34A2) is a membrane transporter of interest in cancer research, particularly in ovarian cancer, where it is considered a relevant biomarker and therapeutic target. Because tumor microenvironments differ from normal tissue in pH, membrane composition, and interaction context, the project investigates whether these conditions affect the structural and topological organization of extracellular NaPi2b regions that may be relevant for recognition and targeting.
+## Study design
 
-## Research question
+### Protein system
 
-The main question addressed in this repository is:
+- **Protein:** NaPi2b / SLC34A2.
+- **Starting model:** AlphaFold model AF-O95436-F1.
+- **System context:** fully atomistic membrane-protein systems with glycans and disulfide bonds as specified in the MD protocol.
+- **MD engine:** GROMACS; the broader protocol uses CHARMM36m-compatible parameters and constant-pH MD design elements.
 
-> Can tumor-like conditions reshape the local residue interaction topology of NaPi2b in ways that are not fully captured by classical MD metrics, but become visible after transforming trajectories into residue interaction networks?
+### Simulated microenvironments
 
-## Key findings
+The simulations compare two *modelled* physicochemical contexts rather than clinical samples.
 
-The current pilot analysis compares NaPi2b under normal (`NORM`) and tumor-like (`TUMOR`) conditions using both classical MD descriptors and residue interaction network (RIN) topology.
+| Feature | Normal-like condition | Tumor-like condition |
+|---|---:|---:|
+| Class label | `normal` / 0 | `tumor` / 1 |
+| Target pH | 7.4 | 6.8 |
+| Membrane context | Healthy-like asymmetric lipid profile | Tumor-like asymmetric lipid profile |
+| Temperature in production protocol | 310 K | 312 K |
+| NaCl | 145 mM | 170 mM |
+| MgCl2 | 1.0 mM | 0.65 mM |
+| Extracellular ganglioside signature | GM1-containing outer leaflet | GM3-containing outer leaflet |
 
-**Classical MD descriptors show reduced global mobility, but no epitope-specific effect.**
-Global RMSD decreases from 0.72 ± 0.29 nm (`NORM`) to 0.56 ± 0.15 nm (`TUMOR`), while the radius of gyration remains essentially unchanged (3.64 nm vs 3.63 nm). Within the epitope region (residues 324–338), RMSF and Rg show no statistically significant difference between conditions (RMSF p = 0.23, Rg p = 0.97). In isolation, these descriptors would suggest that tumor-like conditions only reduce overall flexibility without touching the epitope itself.
+The condition definitions jointly modify pH, ion composition, and membrane composition. Therefore, downstream differences are interpreted as effects associated with the **integrated modelled microenvironment**, not as causal effects of a single lipid, ion, or pH change.
 
-**Residue interaction network topology reveals a localized effect that classical metrics miss.**
-After converting trajectories into per-frame RINs and computing degree, closeness, betweenness, and eigenvector centrality, a subdomain-level rewiring becomes visible within the epitope region, concentrated in residues 323–327 and 335, where all four centrality metrics drop by roughly 60–80% in `TUMOR` relative to `NORM`. Ser326 is the most affected position, with eigenvector centrality dropping by approximately 99–100%.
+## Dynamic RIN construction
 
-![...](results/figures/fig1_delta_centrality_heatmap.png)
-![...](results/figures/epitope_contact_maps.png)
+### Graph representation
 
-**The epitope shifts into a different network community between conditions.**
-Community detection shows that the epitope region belongs to a large, heterogeneous structural module under `NORM`, but is reassigned to a more compact, extracellular-dominated module under `TUMOR`. The residues keep a similar local geometry, but their position in the protein's communication network changes.
+Each selected MD frame is transformed into a residue-interaction network:
 
-![...](results/figures/fig3b_alluvial.png)
+- **Protein nodes:** amino-acid residues of NaPi2b.
+- **Optional non-protein nodes:** lipids, glycans, and ligands when present in the exported MANIA artifacts.
+- **Edges:** physical interactions detected from the trajectory and represented as relation types in heterogeneous graphs.
+- **Temporal information:** consecutive graph frames are assembled into fixed-length temporal windows for downstream analysis.
 
-**Regional (ECD/epitope) betweenness confirms the effect is local, not global.**
-Betweenness centrality computed specifically within the extracellular domain (ECD) and epitope subgraphs shows the same directionality as the whole-protein analysis, supporting that the rewiring is a regional phenomenon rather than an artifact of whole-graph normalization.
+The preprocessing contract retains per-frame contacts, residue-level attributes, non-protein nodes, QC summaries, and explicit manifests. Periodic-boundary-condition-aware preprocessing is used for geometry-based contact calculations.
 
-![...](results/figures/fig6_ECD_subgraph_betweenness.png)
+### Interaction types
 
-**Working interpretation.**
-Classical MD descriptors capture global stability and mobility but are not sensitive to subdomain-level reorganization of the interaction network. Graph-based topological analysis localizes this reorganization to specific residues (323–327, 335, and especially Ser326) and to a change in community membership of the epitope. This supports the hypothesis that altered antibody recognition of NaPi2b under tumor-like conditions may be driven by rewiring of the intramolecular interaction network around the epitope rather than by large-scale conformational change.
+The workflow supports the following relation classes, depending on the preprocessing export and analysis stage:
 
-## Systems analyzed
+- backbone contacts;
+- hydrogen bonds;
+- van der Waals contacts;
+- hydrophobic contacts;
+- ionic contacts and salt bridges;
+- aromatic and cation-pi interactions;
+- disulfide bonds;
+- protein-lipid, protein-glycan, glycan-anchor, and protein-ligand interactions.
 
-Two condition-specific systems are processed through the same analytical logic:
+### Principal preprocessing artifacts
 
-| System | Description |
+| Artifact | Purpose |
 |---|---|
-| `normal` (`NORM`) | Reference condition used as the structural and topological baseline: physiological pH and a healthy epithelial-like lipid/ionic composition. |
-| `tumor` (`TUMOR`) | Tumor-like condition used to evaluate condition-dependent rewiring of the NaPi2b interaction network: acidic pH and a tumor-associated lipid/ionic composition. |
+| `contact_edges_perframe_*.parquet` | Per-frame dynamic contact edges for graph construction |
+| `residue_table_*.csv` | Residue identifiers and structural features |
+| `protein_contact_edges_undirected_*.csv` | Aggregate protein-protein contact statistics |
+| `nonprotein_nodes_*.csv` | Lipid/glycan/ligand node definitions |
+| `np_contact_edges_*.csv` | Protein-to-non-protein contacts |
+| `*_manifest.json`, `dataset_manifest.json` | Provenance, configuration, and validation metadata |
+| QC CSV/JSON files | Input integrity, node/edge coverage, and preprocessing checks |
 
-Both conditions are processed through a common export and analysis pipeline, making downstream comparison reproducible and explicit.
+## Topological analysis
 
-## Simulation conditions
+The topology-first branch quantifies how the dynamic RIN is organised within each simulated condition and identifies regions whose network properties differ between conditions.
 
-The trajectories analyzed in this repository come from an equilibrium all-atom MD pilot, one continuous production run per condition (30 ns, no replicas). This section documents how the two systems (`NORM`, `TUMOR`) were built and run.
+### Analyses
 
-### Structural starting point
+- Node centralities, including degree, betweenness, closeness, eigenvector centrality, and k-core-related features.
+- Differential centrality statistics and false-discovery-rate-aware comparisons.
+- Community structure in normal-like and tumor-like networks.
+- Regional analyses of extracellular, epitope-associated, and inter-region contact patterns.
+- Protein–non-protein contact summaries and differential contact profiles.
+- Temporal RIN descriptors and convergence/divergence outputs.
 
-- Protein model: NaPi2b, 690 residues.
-- Glycosylation: N-glycans (FA2G2S2) modeled at Asn295 and Asn308.
-- Disulfide bridges included as resolved in the starting structure.
-- Systems built in CHARMM-GUI (Membrane Builder), force field CHARMM36m, TIP3P water.
-- Water layer thickness: 30 Å. Box size: 130 Å (`NORM`) / 135 Å (`TUMOR`).
+### Selected output tables
 
-### Asymmetric lipid bilayer composition
+| File | Description |
+|---|---|
+| `results/tables/centrality_delta.csv` | Condition-level differences in node centralities |
+| `results/tables/community_normal.csv` | Community assignments in the normal-like condition |
+| `results/tables/community_tumor.csv` | Community assignments in the tumor-like condition |
+| `results/tables/temporal_rin_*.csv` | Temporal network descriptors, when available |
+| `results/tables/statistics_mwu_fdr.csv` | Statistical comparisons with FDR correction, when available |
 
-The plasma membrane was modeled as an asymmetric bilayer with condition-specific outer/inner leaflet composition (mol %):
+## Pilot ST-GNN analysis
 
-| Condition | Leaflet | POPC | PSM | POPS | POPI | CHOL | POPE | GM1 | GM3 | Σ |
-|---|---|---|---|---|---|---|---|---|---|---|
-| **NORM** | Outer | 47 | 8 | 5 | 5 | 30 | — | 5 | — | 100% |
-| **NORM** | Inner | 13 | — | 12 | 11 | 19 | 45 | — | — | 100% |
-| **TUMOR** | Outer | 38 | 10 | 8 | 5 | 30 | — | — | 5 | 100% |
-| **TUMOR** | Inner | 9 | — | 6 | 12 | 23 | 50 | — | — | 100% |
+### Aim
 
-Rationale for the tumor-associated shifts:
+The ST-GNN pilot asks whether dynamic RINs derived from normal-like and tumor-like MD trajectories contain a label-associated signal that can be extracted by a graph-temporal model.
 
-- **PC** decreases in the tumor outer leaflet, reflecting the reported reduction of phosphatidylcholine in tumor membrane remodeling.
-- **SM and CHOL** increase in the tumor outer leaflet, consistent with raft rigidification and reduced membrane fluidity reported in tumor cells.
-- **PS** is exposed at low levels in the tumor outer leaflet (5%), reflecting loss of flippase-mediated asymmetry seen in malignant cells, while remaining sequestered in the inner leaflet under `NORM`.
-- **GM1 → GM3 switch**: GM1 is present only in `NORM` (healthy epithelial raft ganglioside), replaced by GM3 in `TUMOR`, consistent with the ganglioside remodeling associated with tumor RTK signaling (EGFR/HER2) and reported relevance in ovarian cancer.
-- **PE** dominates the inner leaflet in both conditions (45–50%), consistent with its physiological role in inner-leaflet curvature.
-- **PI** is elevated in the inner leaflet in both conditions (11–15%), consistent with its role as a PI3K signaling substrate.
+This is a **methodological pilot**. It demonstrates the technical integration of MANIA-generated dynamic graphs with machine learning; it does not provide an independently replicated estimate of biological separation between simulated conditions.
 
-Ions and any counterions automatically added by CHARMM-GUI were removed and re-added explicitly in a separate ionization step (below), so that final ionic strength matches the target physiological/tumor-like composition exactly.
+### Input representation
 
-### Protonation state (pH-dependent, fixed for production)
+- Each frame is represented as a heterogeneous RIN.
+- Node types include protein residues and, where available, lipid and glycan entities.
+- Graph relations encode residue-residue and protein–non-protein interaction types.
+- Consecutive frames are combined into temporal windows of **5 frames**.
+- The pilot data use blocked temporal groups to reduce direct mixing of neighbouring windows between subsets.
 
-Protonation states of titratable residues were assigned per condition using `pdb2pqr` with PROPKA at the condition-specific pH, and then **fixed** for the production run (no constant-pH/λ-dynamics in this pilot):
+### Architecture
 
-```bash
-# NORM
-pdb2pqr --ff CHARMM --with-ph 7.4 --titration-state-method propka \
-        --pdb-output system_pH74.pdb step5_input.pdb system_pH74.pqr
+#### Graph encoder
 
-# TUMOR
-pdb2pqr --ff CHARMM --with-ph 6.8 --titration-state-method propka \
-        --pdb-output system_pH68.pdb step5_input.pdb system_pH68.pqr
+A heterogeneous graph encoder projects protein, lipid, and glycan node features into a shared hidden representation and applies two `HeteroConv` layers based on `SAGEConv` relations. Protein-node representations are aggregated with attention pooling.
+
+- Frame hidden dimension: **128**
+- Graph-convolution layers: **2**
+- Dropout: **0.30**
+- Pooling: attention pooling
+
+#### Conformation autoencoder
+
+`ConformationAutoencoderV4` learns compact frame-level conformation representations before temporal reconstruction.
+
+```text
+Heterogeneous RIN frame
+        |
+        v
+Graph encoder (hidden dimension 128)
+        |
+        v
+Projection: 128 -> 64 -> 24
+        |
+        v
+Latent conformation representation
+        |
+        v
+Two-layer LSTM encoder/decoder (hidden dimension 128)
 ```
 
-Assigned protonation states:
+- Latent dimension: **24**
+- LSTM layers: **2**
+- LSTM hidden dimension: **128**
+- Reconstruction loss: mean squared error in latent space
+- Anti-collapse term: latent-norm target = **1.0**; regularisation weight = **1e-3**
 
-| Residue | pKa | Charge at pH 7.4 (`NORM`) | Charge at pH 6.8 (`TUMOR`) |
-|---|---|---|---|
-| HIS | 6.0 | ~0 (≈10% protonated) | ~+0.5 (≈50% protonated) |
-| N-terminus | 8.0 | +0.5 | +0.8 |
-| ASP | 3.9 | −1 | −1 |
-| GLU | 4.2 | −1 | −1 |
-| LYS | 10.5 | +1 | +1 |
-| Sialic acid (SIAL / N5EAC) | 2.6 | −1 (fixed CHARMM36 carbohydrate charge) | −1 (fixed CHARMM36 carbohydrate charge) |
+The anti-collapse penalty prevents a trivial solution in which all latent vectors approach zero.
 
-Topology was then generated per condition with the standard CHARMM36m force field (`pdb2gmx`, TIP3P water, hydrogens rebuilt from the assigned protonation state).
+#### Spatiotemporal classifier
 
-### Ionic composition
+`SpatioTemporalGNN` encodes every frame in a temporal window, integrates frame embeddings with a GRU, and predicts a normal-like or tumor-like label.
 
-| Salt | `NORM` | `TUMOR` |
-|---|---|---|
-| NaCl | 0.145 M | 0.170 M |
-| KCl | 0.005 M | 0.005 M |
-| CaCl₂ | 0.0025 M | 0.0025 M |
-| MgCl₂ | 0.001 M | 0.00065 M |
-
-Ions were added stepwise with `gmx genion`/`gmx insert-molecules` (neutralization + NaCl, then K⁺, then Ca²⁺, then Mg²⁺), updating the `[ molecules ]` section of the topology after each step.
-
-### Equilibration and production (standard GROMACS, fixed protonation)
-
-- **Energy minimization**: steepest descent, 5000 steps, `emtol = 500 kJ·mol⁻¹·nm⁻¹`.
-- **NVT equilibration**: 3–5 ns, v-rescale thermostat (τT = 0.1 ps), target temperature 310 K (`NORM`) / 312 K (`TUMOR`), position restraints on protein heavy atoms (1000 kJ·mol⁻¹·nm⁻²).
-- **NPT equilibration**: 5–10 ns, Berendsen barostat (τP = 1.0 ps), semi-isotropic pressure coupling at 1 bar, restraints released stepwise.
-- **Production**: **30 ns equilibrium MD per condition, single continuous run (no replicas)**, standard GROMACS integrator (`md`), fixed protonation state from the PROPKA assignment above — i.e., no constant-pH/λ-dynamics were used for the trajectories analyzed in this repository.
-- **Trajectory sampling**: 300 frames extracted per condition for downstream residue-level and graph-based analysis (Phase3A/Phase3B).
-
-### Trajectory-level QC
-
-Standard convergence and stability checks were computed per condition before downstream graph analysis:
-
-```bash
-gmx rms    -f md.xtc -s md.tpr -o rmsd.xvg    # convergence threshold ~0.3–0.5 nm
-gmx rmsf   -f md.xtc -s md.tpr -o rmsf.xvg
-gmx gyrate -f md.xtc -s md.tpr -o rg.xvg
-gmx sasa   -f md.xtc -s md.tpr -o sasa.xvg
+```text
+RIN(t1), RIN(t2), ..., RIN(t5)
+        |
+        v
+Graph encoder per frame
+        |
+        v
+5 frame embeddings (128 dimensions)
+        |
+        v
+Two-layer GRU (hidden dimension 128)
+        |
+        v
+MLP classifier: 128 -> 64 -> 2
 ```
 
-These outputs feed directly into the QC panels referenced in [Figures](#figures) and into the `residuetable_*.csv` exports described in `docs/data-contract.md`.
+- Temporal window: **5 frames**
+- GRU layers: **2**
+- GRU hidden dimension: **128**
+- Dropout: **0.30**
+- Output classes: **2**
 
-## Pipeline structure
+### Training settings
 
-### Phase3A — preprocessing
+| Parameter | Value |
+|---|---:|
+| Optimiser | Adam |
+| Learning rate | 1e-3 |
+| Weight decay | 1e-4 |
+| Maximum epochs | 100 |
+| Early-stopping patience | 15 epochs |
+| Classification threshold | 0.5 |
+| Pseudo-random seeds | 42, 44, 7, 123, 2026 |
 
-Phase3A converts raw trajectory-derived information into a standardized set of exports for graph-based downstream analysis. This stage includes residue feature extraction, contact definition, integration of lipid and glycan context, and generation of machine-readable artifacts.
+### Pilot validation design
 
-Key outputs from this stage include:
+The pilot uses blocked temporal evaluation. Temporal windows are grouped into non-overlapping time blocks before train/validation/test assignment. Two blocked split configurations and five random seeds yield **10 real-label ST-GNN runs**.
 
-- residue tables for each condition,
-- protein contact edge tables, including undirected variants,
-- lipid, glycan, and non-protein node tables,
-- non-protein contact edge files,
-- heterograph exports for graph workflows,
-- 3D coordinate mappings for structural visualization,
-- per-frame contact edge parquet files for temporal analysis.
+An explicit **label-permutation control** uses the same model architecture and training settings but disrupts the correspondence between data and normal/tumor labels.
 
-### Phase3B — graph analysis
+> **Critical limitation:** temporal blocking reduces direct temporal leakage but does not create independent biological or MD replicates. Windows from a trajectory remain autocorrelated. The pilot must therefore not be interpreted as an independent-replica validation.
 
-Phase3B consumes the exported Phase3A artifacts and performs graph-based analysis of NaPi2b under each condition. This includes graph QC, consensus network generation, condition-wise centrality comparison, regional extracellular domain and epitope analysis, community detection, and temporal residue interaction network analysis.
+### Pilot results
 
-The notebook also contains figure-generation logic for publication-style outputs, including regional contact views, community reshuffling summaries, and temporal graph metric panels. All numeric and visual outputs are written to `results/`, not left inline in the notebook, so they can be reused without re-running the analysis.
+| Analysis | ROC-AUC | F1 | MCC | Accuracy | Runs |
+|---|---:|---:|---:|---:|---:|
+| ST-GNN, original labels | 0.665 | 0.768 | 0.500 | 0.752 | 10 |
+| ST-GNN, permutation baseline | 0.584 | 0.671 | 0.000 | 0.504 | 10 |
 
-## Repository goals
+The original-label runs achieve a mean MCC of **0.50**, whereas the permutation baseline has MCC = **0.00**. This indicates that the pilot pipeline can extract a label-associated structure that is not retained after label permutation.
 
-This repository is designed to serve several purposes at once:
+However, the individual fold-by-seed results are strongly variable and show seed-dependent bimodality: some training runs strongly separate the simulated contexts, while others remain near chance-level classification. Consequently, this result is interpreted as evidence of **technical feasibility and a hypothesis-generating signal**, not as confirmed biological discrimination.
 
-- a reproducible scientific workspace for NaPi2b structural analysis,
-- a transparent bridge between molecular dynamics and graph-based biological interpretation,
-- a foundation for future pipeline modularization and packaging,
-- a basis for downstream mutation analysis, ML experiments, and interactive tooling.
+### Latent-space baselines
+
+Classical classifiers trained on the learned latent features show high internal performance in the pilot data. These values are retained as exploratory diagnostics of latent-space structure only.
+
+| Model | ROC-AUC | F1 | MCC | Accuracy |
+|---|---:|---:|---:|---:|
+| Logistic Regression | 1.000 | 0.988 | 0.977 | 0.988 |
+| Random Forest | 0.872 | 0.651 | 0.416 | 0.699 |
+| Gradient Boosting | 0.901 | 0.733 | 0.595 | 0.779 |
+| SVM with RBF kernel | 0.999 | 0.991 | 0.982 | 0.991 |
+
+The nearly perfect internal metrics of Logistic Regression and SVM should **not** be interpreted as out-of-trajectory or biological generalisation. They may reflect genuine structure in the latent space, residual temporal-block structure, or both. Independent-replica validation is required.
+
+### ST-GNN results and artifacts
+
+| File | Description |
+|---|---|
+| `notebooks/ST_GNN_Pilot2.ipynb` | Pilot ST-GNN notebook, including preprocessing-artifact loading, graph construction, autoencoder, ST-GNN, baselines, and evaluation |
+| `results/figures/ae_training_curves.png` | Autoencoder reconstruction-loss and latent-norm training curves |
+| `results/figures/umap_latent_space.png` | UMAP projection of latent representations |
+| `results/figures/stgnn_real_vs_permutation.png` | Comparison of real-label and permutation-control ST-GNN results |
+| `results/tables/stgnn_results_real_per_fold_seed.csv` | Per-run metrics across blocked folds and pseudo-random seeds |
+| `results/tables/stgnn_summary_bootstrap_ci.csv` | Bootstrap confidence intervals for ST-GNN and permutation results |
+| `results/tables/final_comparison_table.csv` | Summary comparison of ST-GNN and latent-feature baseline models |
+| `results/manifests/stgnn_pilot_blocked_temporal_manifest.json` | Pilot configuration, provenance, and validation metadata |
 
 ## Repository layout
 
 ```text
-./
-├─ README.md
-├─ docs/
-│  ├─ project-overview.md
-│  ├─ data-contract.md
-│  └─ repository-map.md
-├─ notebooks/
-│  ├─ Phase3A_preprocessing_scientific_v5.6.ipynb
-│  └─ Phase3B_Topological_Graph_Analysis_v6.ipynb
-└─ results/
-   ├─ figures/
-   │  ├─ qc_degree_distribution
-   │  ├─ ecd_contact_maps
-   │  ├─ ecd_contact_profile
-   │  ├─ epitope_contact_maps
-   │  ├─ epitope_contact_profile
-   │  ├─ fig1_delta_centrality_heatmap
-   │  ├─ fig2_scatter_normal_vs_tumor
-   │  ├─ fig3_community_bar
-   │  ├─ fig3b_alluvial
-   │  ├─ fig3c_network_communities
-   │  ├─ fig4_subgraph_top30
-   │  ├─ fig6_ECD_subgraph_betweenness
-   │  ├─ fig6_epitope_subgraph_betweenness
-   │  ├─ fig_temporal_rin
-   │  └─ fig_temporal_rin_delta
-   ├─ manifests/
-   │  ├─ config.yaml
-   │  ├─ dataset_manifest.json
-   │  ├─ edge_semantics.json
-   │  └─ topology_stats.json
-   └─ tables/
-      ├─ centrality_delta.xlsx
-      ├─ community_normal.xlsx
-      └─ community_tumor.xlsx
+.
+├── README.md
+├── docs/                       # Protocols and supplementary documentation
+├── notebooks/                  # Reproducible analysis notebooks
+│   └── ST_GNN_Pilot2.ipynb
+└── results/
+    ├── figures/                # Publication/presentation figures
+    │   ├── ae_training_curves.png
+    │   ├── stgnn_real_vs_permutation.png
+    │   └── umap_latent_space.png
+    ├── manifests/              # Configuration and provenance files
+    │   └── stgnn_pilot_blocked_temporal_manifest.json
+    └── tables/                 # Machine-readable result tables
+        ├── centrality_delta.csv
+        ├── community_normal.csv
+        ├── community_tumor.csv
+        ├── final_comparison_table.csv
+        ├── stgnn_results_real_per_fold_seed.csv
+        └── stgnn_summary_bootstrap_ci.csv
 ```
 
-`docs/` contains short supporting pages: `project-overview.md` (extended scientific description), `data-contract.md` (exact fields and files passed between Phase3A and Phase3B), and `repository-map.md` (a guided tour of every folder). `results/manifests/` records the exact configuration (`config.yaml`), dataset provenance (`dataset_manifest.json`), edge-type definitions (`edge_semantics.json`), and summary topology statistics (`topology_stats.json`) used to generate everything in `results/tables/` and `results/figures/`.
+## Main conclusions
 
-## Figures
+1. The repository establishes a reproducible route from atomistic NaPi2b MD trajectories to dynamic residue-interaction networks and graph-based analysis artifacts.
+2. The topology branch provides condition-specific centrality, community, and regional contact outputs for structural interpretation.
+3. In a blocked temporal pilot, the ST-GNN result on original labels exceeds the permutation baseline (mean MCC 0.50 versus 0.00).
+4. The ST-GNN result is seed-dependent and is not yet independently replicated; it should be treated as a technical and hypothesis-generating result.
+5. Confirmatory analysis requires independent MD replicas and strict splitting by trajectory/run identifier rather than frames or temporal windows.
 
-The figures in `results/figures/` fall into four groups, ordered the way a new reader should look at them.
+## Limitations
 
-**Quality control**
-- **qc_degree_distribution** — degree distribution of the residue interaction network, used to sanity-check graph construction before any biological comparison.
+- Simulated normal-like and tumor-like conditions change several factors jointly, including pH, ions, and membrane composition.
+- Current pilot windows are temporally autocorrelated within MD trajectories.
+- The pilot blocked split is stricter than random frame splitting but is not a replacement for independent-replica validation.
+- The duration and number of trajectories limit claims about long-timescale conformational sampling.
+- Force-field choice, membrane construction, contact definitions, and graph featurisation may influence the observed network patterns.
 
-**Global centrality comparison**
-- **fig1_delta_centrality_heatmap** — per-residue change in centrality between `normal` and `tumor`, the primary summary figure for whole-protein rewiring.
-- **fig2_scatter_normal_vs_tumor** — residue-level centrality in `normal` plotted against `tumor`, highlighting residues that deviate from the diagonal.
+## Next steps
 
-**Community structure**
-- **fig3_community_bar** — community size and composition per condition.
-- **fig3b_alluvial** — alluvial diagram tracking how residues move between communities from `normal` to `tumor`.
-- **fig3c_network_communities** — network layout colored by community assignment, condition by condition.
-- **fig4_subgraph_top30** — induced subgraph of the top 30 residues by centrality, used to inspect the local wiring around the most central nodes.
+The next validation stage will process independent 100-ns MD replicas separately and use strict **replica-aware evaluation**:
 
-**Regional and temporal analysis (ECD and epitope)**
-- **ecd_contact_maps** / **ecd_contact_profile** — contact maps and aggregated contact profile for the extracellular domain (ECD).
-- **epitope_contact_maps** / **epitope_contact_profile** — contact maps and aggregated contact profile restricted to the epitope-associated subdomain.
-- **fig6_ECD_subgraph_betweenness** / **fig6_epitope_subgraph_betweenness** — betweenness centrality within the ECD and epitope subgraphs specifically, isolating regional effects from whole-protein trends.
-- **fig_temporal_rin** / **fig_temporal_rin_delta** — sliding-window graph metrics over the trajectory and their condition-wise delta, showing that rewiring is a dynamic, not only static, effect.
+```text
+Independent MD runs
+        |
+        v
+Separate MANIA preprocessing per run_id
+        |
+        v
+Dynamic RINs and temporal windows
+        |
+        v
+Training and test sets separated by run_id
+        |
+        v
+Confirmatory ST-GNN and topology interpretation
+```
 
-## How to start
+No frames or temporal windows from the same MD trajectory should appear in both training and test subsets.
 
-For a new reader, the recommended entry points are:
+## Authors and contact
 
-1. Read this `README.md` for the project scope, key findings, and simulation conditions.
-2. Read `docs/project-overview.md` for the extended scientific narrative.
-3. Read `docs/data-contract.md` to understand what each Phase3A export contains and how Phase3B consumes it.
-4. Browse `results/figures/` in the order listed above: QC → global centrality → communities → regional/temporal.
-5. Open `notebooks/Phase3A_preprocessing_scientific_v5.6.ipynb` to see how the exports in `results/` are produced.
-6. Open `notebooks/Phase3B_Topological_Graph_Analysis_v6.ipynb` to see how the figures and tables are generated from those exports.
+- **R.A. Vlasenkova** — study design, computational workflow development, technical implementation, molecular-dynamics and graph analysis, interpretation, and writing.
+- **R.G. Kiyamova** — conceptualisation of the biological NaPi2b/ovarian-cancer research context.
+- **N.I. Akberova** — conceptualisation of the bioinformatics direction and scientific supervision.
 
-## Current status
+Institute of Fundamental Medicine and Biology, Kazan Federal University, Kazan, Russia  
+Contact: [r.mukhamadeeva@yandex.ru](mailto:r.mukhamadeeva@yandex.ru)
 
-Preprocessing exports and graph analytics are explicitly connected through a stable `results/` layer with dedicated `figures/`, `manifests/`, and `tables/` subfolders. The repository already reflects a mature analysis logic; the next step toward external usability is refactoring the reusable notebook logic into package-style helper modules.
+## Citation
 
-## Future work
-
-- Refactor reusable notebook logic into package-style helper modules.
-- Extend condition comparison toward mutation-aware analysis, including disease-relevant variants such as T330M.
-- Extend the current fixed-protonation, single-run pilot (30 ns, no replicas) toward multi-replica production and, at a later stage, constant-pH/λ-dynamics (FMM-CpHMD) simulations, as documented separately in the MD protocol.
-- Connect the workflow to a more formalized pipeline and visualization interface: https://github.com/2Myaka2/MANIA_WANIA/
-
-## Russian summary
-
-Этот репозиторий посвящен анализу транспортера NaPi2b (SLC34A2) методами структурной биоинформатики, объединяющими молекулярную динамику, residue interaction networks и топологический анализ графов. Репозиторий состоит из двух ноутбуков (Phase3A — препроцессинг, Phase3B — топологический анализ) и слоя `results/` с фигурами, манифестами и таблицами, которые они производят.
-
-Симуляции представляют собой равновесную полноатомную MD (30 нс, без реплик, GROMACS + CHARMM36m) для двух условий: NORM (pH 7.4, липидный и ионный состав здорового эпителия) и TUMOR (pH 6.8, опухолеассоциированный липидный и ионный состав, включая замену GM1 на GM3 и частичную экспозицию PS в наружном листке). Протонирование титруемых остатков задавалось через pdb2pqr/PROPKA под целевой pH и фиксировалось на всё время продакшн-расчёта; constant-pH/λ-dynamics в этом пилоте не использовались.
-
-Классические MD-дескрипторы (RMSD, RMSF, Rg) показывают снижение глобальной подвижности в TUMOR при отсутствии значимых различий в эпитопном регионе (324–338), тогда как анализ residue interaction networks выявляет локальную перестройку центральности в остатках 323–327 и 335, с почти полной потерей eigenvector centrality у Ser326, а также переход эпитопа в другой сетевой модуль (community) между условиями. Это поддерживает гипотезу, что изменение эффективности распознавания NaPi2b антителами в опухолевых условиях может быть связано со скрытой перестройкой сети внутримолекулярных взаимодействий, а не с крупной геометрической перестройкой.
+If you use this repository, please cite the associated project materials and contact the authors for the current citation format.
