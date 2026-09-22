@@ -16,6 +16,22 @@ The workflow is organized into two major stages.
 
 **Phase3B** takes these outputs and performs topological analysis of condition-specific residue interaction networks. This includes graph quality control, consensus graph construction, centrality analysis, extracellular domain and epitope-focused analysis, community detection, allosteric path exploration, and temporal residue interaction network analysis.
 
+## Pilot ST-GNN extension
+
+The repository includes a pilot spatiotemporal graph neural network analysis
+of dynamic NaPi2b residue-interaction networks.
+
+The analysis combines:
+- heterogeneous frame-level RINs;
+- a graph-based conformation autoencoder;
+- temporal integration with a GRU-based ST-GNN;
+- blocked temporal evaluation;
+- label-permutation control.
+
+The pilot result demonstrates technical feasibility and a label-associated
+signal, but it is not an independent-replica validation. Results are
+seed-dependent and must be interpreted as hypothesis-generating.
+
 ## What makes the repository useful
 
 The repository is intended not only as a storage space for notebooks, but as a structured scientific workspace. It makes the relationship between preprocessing, graph construction, and biological interpretation explicit, which is important for reproducibility, collaboration, and later packaging into a more formal pipeline or service.
