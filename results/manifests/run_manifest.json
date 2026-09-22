@@ -1,0 +1,91 @@
+{
+  "config": {
+    "conditions": [
+      "normal",
+      "tumor"
+    ],
+    "condition_to_label": {
+      "normal": 0,
+      "tumor": 1
+    },
+    "n_frames_parquet": 301,
+    "traj_window": 5,
+    "traj_stride": 1,
+    "n_blocks_per_condition": 6,
+    "test_blocks_per_condition": 1,
+    "val_blocks_per_condition": 1,
+    "node_types": [
+      "protein",
+      "lipid",
+      "glycan"
+    ],
+    "protein_feat_dim": 34,
+    "lipid_feat_dim": 11,
+    "glycan_feat_dim": 11,
+    "use_topology_features": true,
+    "topology_feature_cols": [
+      "degree",
+      "betweenness",
+      "closeness",
+      "eigenvector",
+      "kcore"
+    ],
+    "edge_types": [
+      "backbone",
+      "hbond",
+      "disulfide",
+      "vdw",
+      "hydrophobic",
+      "aromaticpi",
+      "cationpi",
+      "ionic",
+      "saltbridge",
+      "proteinlipid",
+      "glycananchor",
+      "proteinglycan",
+      "proteinligand"
+    ],
+    "frame_hidden_dim": 128,
+    "latent_dim": 24,
+    "ae_latent_norm_target": 1.0,
+    "ae_latent_reg_weight": 0.001,
+    "gru_hidden_dim": 128,
+    "gru_layers": 2,
+    "dropout": 0.3,
+    "use_attention_pooling": true,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "max_epochs": 100,
+    "patience": 15,
+    "batch_size": 1,
+    "classification_threshold": 0.5,
+    "umap_neighbors": 15,
+    "umap_min_dist": 0.1,
+    "hdbscan_min_cluster_size": 10,
+    "hdbscan_min_samples": 5,
+    "seeds": [
+      42,
+      44,
+      7,
+      123,
+      2026
+    ],
+    "n_bootstrap": 2000,
+    "run_permutation_test": true,
+    "permutation_n_repeats": 20,
+    "seed": 42
+  },
+  "n_blocks_total": 12,
+  "n_test_blocks_global": 2,
+  "n_val_blocks_global": 2,
+  "n_cv_folds_run": 2,
+  "topology_features_used": true,
+  "topology_cols_used": [
+    "degree",
+    "betweenness",
+    "closeness",
+    "eigenvector"
+  ],
+  "final_ae_val_latent_norm": 0.9091456532478333,
+  "note_on_loro": "True leave-one-replica-out was not implemented: Phase3A/3B export contains only one trajectory per condition (confirmed by user), not 3 replicas. Used blocked group-aware split (n_blocks_per_condition contiguous time blocks) as the closest feasible group-aware alternative."
+}
